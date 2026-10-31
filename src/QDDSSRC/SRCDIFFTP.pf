@@ -1,0 +1,15 @@
+     A*****************************************************************
+     A* SRCDIFFTP - SRCDIFF test output (used only by the SRCDIFFT test
+     A*             driver; not needed to run SRCDIFF itself)
+     A*****************************************************************
+     A          R SRCDIFFTR
+     A            RUNID         10A         TEXT('Run id')
+     A            LINENO         9S 0       TEXT('Display row number')
+     A            TYPE           1A         TEXT('Row type')
+     A            OSEQ           6S 2       TEXT('Old SRCSEQ')
+     A            NSEQ           6S 2       TEXT('New SRCSEQ')
+     A            OLN            9S 0       TEXT('Old line position')
+     A            NLN            9S 0       TEXT('New line position')
+     A            TXT          100A         TEXT('Text')
+     A          K RUNID
+     A          K LINENO

@@ -1,0 +1,73 @@
+**FREE
+// SRCDIFF_H - prototypes and templates for the SRCDIFF diff engine (SRCDIFFM)
+//
+// Usage:
+//   n = srcdiff_load('OLD' : lib : file : mbr);    // -1 = error, see srcdiff_error()
+//   n = srcdiff_load('NEW' : lib : file : mbr);
+//   rows = srcdiff_run(context : ignBlank);         // diff + build display rows
+//   rows = srcdiff_rebuild(context);                // rows only (after F6), no re-diff
+//   row  = srcdiff_getRow(i);                       // 1..rows
+//   srcdiff_free();
+
+/if defined(SRCDIFF_H)
+/eof
+/endif
+/define SRCDIFF_H
+
+dcl-c SRCDIFF_WHOLE 9999;        // context value = show the whole member
+dcl-c SRCDIFF_MAXD 2000;         // Myers cap (beyond: block = delete all + insert all)
+dcl-c SRCDIFF_MAXLINES 167000;   // lines per member
+
+// One display row
+dcl-ds srcdiff_row_t qualified template;
+  type char(1);                  // ' ' context, '-' deleted, '+' added, '@' hunk hdr, '=' stats
+  oldSeq packed(6:2);            // SRCSEQ of the old line, 0 if n/a
+  newSeq packed(6:2);
+  oldLine int(10);               // 1-based position in the old member, 0 if n/a
+  newLine int(10);
+  text char(100);                // source text (SRCDTA), header or stats text
+                                 // ('@' rows: '@@ -a,b +c,d @@ ' + function line)
+end-ds;
+
+dcl-pr srcdiff_load int(10) extproc('srcdiff_load');
+  side char(3) const;            // 'OLD' / 'NEW'
+  lib char(10) const;
+  file char(10) const;
+  mbr char(10) const;
+end-pr;
+
+dcl-pr srcdiff_run int(10) extproc('srcdiff_run');
+  context int(10) const;
+  ignBlank ind const;
+end-pr;
+
+dcl-pr srcdiff_rebuild int(10) extproc('srcdiff_rebuild');
+  context int(10) const;
+end-pr;
+
+dcl-pr srcdiff_count int(10) extproc('srcdiff_count');
+end-pr;
+
+dcl-pr srcdiff_getRow likeds(srcdiff_row_t) extproc('srcdiff_getRow');
+  idx int(10) const;
+end-pr;
+
+dcl-pr srcdiff_stats extproc('srcdiff_stats');
+  adds int(10);
+  dels int(10);
+  hunks int(10);
+end-pr;
+
+// first row of the next / previous change group after / before idx (0 = none)
+dcl-pr srcdiff_nextChange int(10) extproc('srcdiff_nextChange');
+  idx int(10) const;
+end-pr;
+dcl-pr srcdiff_prevChange int(10) extproc('srcdiff_prevChange');
+  idx int(10) const;
+end-pr;
+
+dcl-pr srcdiff_error varchar(200) extproc('srcdiff_error');
+end-pr;
+
+dcl-pr srcdiff_free extproc('srcdiff_free');
+end-pr;

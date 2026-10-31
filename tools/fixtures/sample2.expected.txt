@@ -1,0 +1,13 @@
+@	0	0	@@ -4,9 +4,9 @@
+ 	4	4	             CHKOBJ     OBJ(&LIB) OBJTYPE(*LIB)
+ 	5	5	             MONMSG     MSGID(CPF9801) EXEC(GOTO CMDLBL(NOLIB))
+ 	6	6	             CALL       PGM(STEP1)
+-	7	0	             CALL       PGM(STEP2)
+ 	8	7	             CALL       PGM(STEP3)
++	0	8	             CALL       PGM(STEP4)
+ 	9	9	             RETURN
+ 	10	10	 NOLIB:      CHGVAR     VAR(&MSG) VALUE('Library' *BCAT &LIB *BCAT 'not found')
+-	11	0	             SNDPGMMSG  MSG(&MSG)
++	0	11	             SNDPGMMSG  MSG(&MSG) MSGTYPE(*ESCAPE)
+ 	12	12	             ENDPGM
+=	0	0	1 hunk, +2 -2

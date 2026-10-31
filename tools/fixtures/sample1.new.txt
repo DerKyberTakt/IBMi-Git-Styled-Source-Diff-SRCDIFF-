@@ -1,0 +1,37 @@
+     H DFTACTGRP(*NO) ACTGRP(*NEW)
+     FCUSTMAST  IF   E           K DISK
+     FORDERS    UF A E           K DISK
+     D CustTotal       S             11P 2
+     D OrderCnt        S              5P 0
+     D ExitPgm         S               N
+KW1  D OpenCnt         S              5P 0
+      *
+      * Main line
+      *
+     C     *ENTRY        PLIST
+     C                   PARM                    pCustNo          10
+     C                   EXSR      LoadCust
+     C                   DOW       not ExitPgm
+     C                   EXSR      NextOrder
+     C                   ENDDO
+     C                   SETON                                        LR
+      *
+     C     LoadCust      BEGSR
+     C     pCustNo       CHAIN     CUSTMAST
+     C                   IF        not %found(CUSTMAST)
+     C                   EVAL      ExitPgm = *ON
+     C                   ENDIF
+     C                   ENDSR
+      *
+     C     NextOrder     BEGSR
+     C                   READ      ORDERS
+     C                   IF        %eof(ORDERS)
+     C                   EVAL      ExitPgm = *ON
+     C                   LEAVESR
+     C                   ENDIF
+KW1  C                   IF        OrdSts = 'O'
+KW1  C                   EVAL      OpenCnt = OpenCnt + 1
+KW1  C                   ENDIF
+     C                   EVAL      CustTotal = CustTotal + OrdAmt
+     C                   EVAL      OrderCnt = OrderCnt + 1
+     C                   ENDSR

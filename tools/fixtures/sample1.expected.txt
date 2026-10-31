@@ -1,0 +1,19 @@
+@	0	0	@@ -4,6 +4,7 @@
+ 	4	4	     D CustTotal       S             11P 2
+ 	5	5	     D OrderCnt        S              5P 0
+ 	6	6	     D ExitPgm         S               N
++	0	7	KW1  D OpenCnt         S              5P 0
+ 	7	8	      *
+ 	8	9	      * Main line
+ 	9	10	      *
+@	0	0	@@ -28,6 +29,9 @@ C     NextOrder     BEGSR
+ 	28	29	     C                   EVAL      ExitPgm = *ON
+ 	29	30	     C                   LEAVESR
+ 	30	31	     C                   ENDIF
++	0	32	KW1  C                   IF        OrdSts = 'O'
++	0	33	KW1  C                   EVAL      OpenCnt = OpenCnt + 1
++	0	34	KW1  C                   ENDIF
+ 	31	35	     C                   EVAL      CustTotal = CustTotal + OrdAmt
+ 	32	36	     C                   EVAL      OrderCnt = OrderCnt + 1
+ 	33	37	     C                   ENDSR
+=	0	0	2 hunks, +4 -0

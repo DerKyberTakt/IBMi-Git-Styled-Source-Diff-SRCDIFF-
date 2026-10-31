@@ -1,0 +1,107 @@
+/*******************************************************************/
+/* SRCDIFFC - command processing program for SRCDIFF               */
+/*                                                                 */
+/* Resolves *NEWFILE / *NEWMBR / *LIBL, checks that both members   */
+/* exist, then calls the viewer SRCDIFFR.  Every problem is sent   */
+/* back as an escape message so PDM shows it on the message line.  */
+/*******************************************************************/
+             PGM        PARM(&NEWFILE &NEWMBR &OLDFILE &OLDMBR &CONTEXT +
+                          &IGNBLANK)
+
+             DCL        VAR(&NEWFILE)  TYPE(*CHAR) LEN(20)
+             DCL        VAR(&NEWMBR)   TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OLDFILE)  TYPE(*CHAR) LEN(20)
+             DCL        VAR(&OLDMBR)   TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CONTEXT)  TYPE(*DEC)  LEN(4 0)
+             DCL        VAR(&IGNBLANK) TYPE(*CHAR) LEN(4)
+
+             DCL        VAR(&NEWF)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&NEWL)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OLDF)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OLDL)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OLDM)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CTX)      TYPE(*CHAR) LEN(4)
+             DCL        VAR(&IGN)      TYPE(*CHAR) LEN(1)
+             DCL        VAR(&RTNMSG)   TYPE(*CHAR) LEN(200)
+
+             DCL        VAR(&MSGID)    TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA)   TYPE(*CHAR) LEN(256)
+             DCL        VAR(&MSGF)     TYPE(*CHAR) LEN(10)
+             DCL        VAR(&MSGFLIB)  TYPE(*CHAR) LEN(10)
+
+             MONMSG     MSGID(CPF0000 MCH0000) EXEC(GOTO CMDLBL(ERROR))
+
+/* Split the qualified names                                       */
+             CHGVAR     VAR(&NEWF) VALUE(%SST(&NEWFILE 1 10))
+             CHGVAR     VAR(&NEWL) VALUE(%SST(&NEWFILE 11 10))
+             CHGVAR     VAR(&OLDF) VALUE(%SST(&OLDFILE 1 10))
+             CHGVAR     VAR(&OLDL) VALUE(%SST(&OLDFILE 11 10))
+             CHGVAR     VAR(&OLDM) VALUE(&OLDMBR)
+             IF         COND(&OLDF *EQ '*NEWFILE') THEN(CHGVAR +
+                          VAR(&OLDF) VALUE(&NEWF))
+             IF         COND(&OLDM *EQ '*NEWMBR') THEN(CHGVAR +
+                          VAR(&OLDM) VALUE(&NEWMBR))
+
+/* New file: resolve the library and check the member              */
+             RTVOBJD    OBJ(&NEWL/&NEWF) OBJTYPE(*FILE) RTNLIB(&NEWL)
+             MONMSG     MSGID(CPF9801 CPF9810) EXEC(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE('New file' *BCAT &NEWF +
+                             *BCAT 'not found in library' *BCAT &NEWL)
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+             CHKOBJ     OBJ(&NEWL/&NEWF) OBJTYPE(*FILE) MBR(&NEWMBR)
+             MONMSG     MSGID(CPF9815) EXEC(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE('New member' *BCAT +
+                             &NEWMBR *BCAT 'not found in' *BCAT &NEWL +
+                             *TCAT '/' *TCAT &NEWF)
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+
+/* Old file: same                                                  */
+             RTVOBJD    OBJ(&OLDL/&OLDF) OBJTYPE(*FILE) RTNLIB(&OLDL)
+             MONMSG     MSGID(CPF9801 CPF9810) EXEC(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE('Old file' *BCAT &OLDF +
+                             *BCAT 'not found in library' *BCAT &OLDL)
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+             CHKOBJ     OBJ(&OLDL/&OLDF) OBJTYPE(*FILE) MBR(&OLDM)
+             MONMSG     MSGID(CPF9815) EXEC(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE('Old member' *BCAT +
+                             &OLDM *BCAT 'not found in' *BCAT &OLDL +
+                             *TCAT '/' *TCAT &OLDF)
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+
+/* Options                                                         */
+             CHGVAR     VAR(&CTX) VALUE(&CONTEXT)
+             IF         COND(&IGNBLANK *EQ '*YES') THEN(CHGVAR +
+                          VAR(&IGN) VALUE('Y'))
+             ELSE       CMD(CHGVAR VAR(&IGN) VALUE('N'))
+
+/* Show the compare                                                */
+             CALL       PGM(SRCDIFFR) PARM(&OLDL &OLDF &OLDM &NEWL +
+                          &NEWF &NEWMBR &CTX &IGN &RTNMSG)
+             MONMSG     MSGID(CPF0001) EXEC(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE('SRCDIFFR not found: add +
+                             the SRCDIFF library to your library list')
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+             IF         COND(&RTNMSG *NE ' ') THEN(DO)
+                CHGVAR     VAR(&MSGDTA) VALUE(&RTNMSG)
+                GOTO       CMDLBL(SNDERR)
+             ENDDO
+             RETURN
+
+/* Our own error text as an escape message                         */
+ SNDERR:     SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA(&MSGDTA) +
+                          MSGTYPE(*ESCAPE)
+             RETURN
+
+/* Unexpected error: forward the exception that got us here        */
+ ERROR:      RCVMSG     MSGTYPE(*EXCP) RMV(*NO) MSGDTA(&MSGDTA) +
+                          MSGID(&MSGID) MSGF(&MSGF) SNDMSGFLIB(&MSGFLIB)
+             MONMSG     MSGID(CPF0000)
+             SNDPGMMSG  MSGID(&MSGID) MSGF(&MSGFLIB/&MSGF) +
+                          MSGDTA(&MSGDTA) MSGTYPE(*ESCAPE)
+             MONMSG     MSGID(CPF0000)
+             ENDPGM

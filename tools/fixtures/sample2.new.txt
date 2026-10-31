@@ -1,0 +1,12 @@
+             PGM        PARM(&LIB)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&MSG) TYPE(*CHAR) LEN(80)
+             CHKOBJ     OBJ(&LIB) OBJTYPE(*LIB)
+             MONMSG     MSGID(CPF9801) EXEC(GOTO CMDLBL(NOLIB))
+             CALL       PGM(STEP1)
+             CALL       PGM(STEP3)
+             CALL       PGM(STEP4)
+             RETURN
+ NOLIB:      CHGVAR     VAR(&MSG) VALUE('Library' *BCAT &LIB *BCAT 'not found')
+             SNDPGMMSG  MSG(&MSG) MSGTYPE(*ESCAPE)
+             ENDPGM
